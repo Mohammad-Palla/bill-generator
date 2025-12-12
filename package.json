@@ -1,0 +1,41 @@
+{
+  "name": "bill-generator",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:server": "node server.js",
+    "dev:all": "concurrently \"npm run dev:server\" \"npm run dev\"",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "browserify-zlib": "^0.2.0",
+    "jspdf": "^3.0.4",
+    "mongodb": "^7.0.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.10.1",
+    "react-toastify": "^11.0.5",
+    "stream-browserify": "^3.0.0",
+    "util": "^0.12.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@rollup/plugin-replace": "^6.0.3",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^4.3.1",
+    "concurrently": "^9.2.1",
+    "cors": "^2.8.5",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "express": "^5.2.1",
+    "globals": "^16.5.0",
+    "vite": "^5.4.11",
+    "vite-plugin-node-polyfills": "^0.24.0"
+  }
+}
