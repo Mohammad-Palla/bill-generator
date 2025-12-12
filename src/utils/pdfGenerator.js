@@ -164,14 +164,31 @@ export function generateBillPDF(billData, restaurant) {
 
   // Column positions - all within CONTENT_WIDTH, leaving space for amounts
   const itemColStart = MARGIN;
-  const itemColWidth = 70; // Reduced item name column
+  const itemColWidth = 60; // Further reduced item name column
   const qtyColStart = itemColStart + itemColWidth;
-  const qtyColWidth = 18; // Quantity column
+  const qtyColWidth = 15; // Reduced quantity column
   const rateColStart = qtyColStart + qtyColWidth;
+  const rateColWidth = 25; // Rate column width
+  // Ensure amount has at least 50pt space from rate column
+  const minAmountSpace = 50;
+  const amountColStart = rateColStart + rateColWidth;
 
-  doc.text("Item", itemColStart, yPos);
-  doc.text("Qty", qtyColStart, yPos);
-  doc.text("Rate", rateColStart, yPos);
+  // Check if we have enough space, if not reduce item width
+  let actualItemWidth = itemColWidth;
+  let actualQtyStart = qtyColStart;
+  let actualRateStart = rateColStart;
+
+  if (amountColStart + minAmountSpace > BILL_WIDTH - MARGIN) {
+    // Reduce item width to make room
+    actualItemWidth =
+      BILL_WIDTH - MARGIN - qtyColWidth - rateColWidth - minAmountSpace - 5;
+    actualQtyStart = MARGIN + actualItemWidth;
+    actualRateStart = actualQtyStart + qtyColWidth;
+  }
+
+  doc.text("Item", MARGIN, yPos);
+  doc.text("Qty", actualQtyStart, yPos);
+  doc.text("Rate", actualRateStart, yPos);
   // Amount header right-aligned within available space
   doc.text("Amount", BILL_WIDTH - MARGIN, yPos, { align: "right" });
   yPos += 12; // Space after header
@@ -188,16 +205,16 @@ export function generateBillPDF(billData, restaurant) {
     const amount = price * (item.quantity || 0);
 
     // Item name - truncate if too long, ensure it fits
-    const nameLines = doc.splitTextToSize(itemName, itemColWidth - 3);
+    const nameLines = doc.splitTextToSize(itemName, actualItemWidth - 3);
     const firstLine = nameLines[0];
-    doc.text(firstLine, itemColStart, yPos);
+    doc.text(firstLine, MARGIN, yPos);
 
-    // Qty and Rate
-    doc.text(qty, qtyColStart, yPos);
-    doc.text(`₹${price.toFixed(2)}`, rateColStart, yPos);
+    // Qty and Rate - use calculated positions to avoid overlap
+    doc.text(qty, actualQtyStart, yPos);
+    doc.text(`Rs.${price.toFixed(2)}`, actualRateStart, yPos);
 
     // Amount - right-aligned, ensuring it doesn't exceed right margin
-    const amountText = `₹${amount.toFixed(2)}`;
+    const amountText = `Rs.${amount.toFixed(2)}`;
     // Use right margin as the x position for right alignment
     doc.text(amountText, BILL_WIDTH - MARGIN, yPos, { align: "right" });
 
@@ -205,7 +222,7 @@ export function generateBillPDF(billData, restaurant) {
     if (nameLines.length > 1) {
       yPos += 10;
       nameLines.slice(1).forEach((line) => {
-        doc.text(line, itemColStart, yPos);
+        doc.text(line, MARGIN, yPos);
         yPos += 10;
       });
     } else {
@@ -231,19 +248,19 @@ export function generateBillPDF(billData, restaurant) {
 
   // All totals right-aligned to the right margin
   doc.text(`Subtotal:`, MARGIN, yPos);
-  doc.text(`₹${subtotal.toFixed(2)}`, BILL_WIDTH - MARGIN, yPos, {
+  doc.text(`Rs.${subtotal.toFixed(2)}`, BILL_WIDTH - MARGIN, yPos, {
     align: "right",
   });
   yPos += 10;
 
   doc.text(`CGST (${restaurant?.cgstRate || 2.5}%):`, MARGIN, yPos);
-  doc.text(`₹${cgst.toFixed(2)}`, BILL_WIDTH - MARGIN, yPos, {
+  doc.text(`Rs.${cgst.toFixed(2)}`, BILL_WIDTH - MARGIN, yPos, {
     align: "right",
   });
   yPos += 10;
 
   doc.text(`SGST (${restaurant?.sgstRate || 2.5}%):`, MARGIN, yPos);
-  doc.text(`₹${sgst.toFixed(2)}`, BILL_WIDTH - MARGIN, yPos, {
+  doc.text(`Rs.${sgst.toFixed(2)}`, BILL_WIDTH - MARGIN, yPos, {
     align: "right",
   });
   yPos += 12;
@@ -254,7 +271,7 @@ export function generateBillPDF(billData, restaurant) {
   doc.setFont(undefined, "bold");
   doc.setFontSize(10);
   doc.text(`Total:`, MARGIN, yPos);
-  doc.text(`₹${total.toFixed(2)}`, BILL_WIDTH - MARGIN, yPos, {
+  doc.text(`Rs.${total.toFixed(2)}`, BILL_WIDTH - MARGIN, yPos, {
     align: "right",
   });
   yPos += 15; // Space after total
