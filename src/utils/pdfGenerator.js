@@ -2,12 +2,12 @@ import jsPDF from "jspdf";
 
 // 80mm thermal printer width = 226.77 points (at 72 DPI)
 const BILL_WIDTH = 226.77;
-const MARGIN = 15; // Increased margin
+const MARGIN = 15;
 const CONTENT_WIDTH = BILL_WIDTH - MARGIN * 2; // ~196.77pt available
 
 export function generateBillPDF(billData, restaurant) {
   // Calculate approximate height needed
-  const itemsHeight = billData.items.length * 20; // ~20pt per item
+  const itemsHeight = billData.items.length * 20;
   const headerHeight = 140;
   const totalsHeight = 80;
   const footerHeight = 40;
@@ -16,7 +16,7 @@ export function generateBillPDF(billData, restaurant) {
 
   const doc = new jsPDF({
     unit: "pt",
-    format: [BILL_WIDTH, Math.max(estimatedHeight, 400)], // Dynamic height, minimum 400pt
+    format: [BILL_WIDTH, Math.max(estimatedHeight, 400)],
     compress: true,
   });
 
@@ -54,8 +54,8 @@ export function generateBillPDF(billData, restaurant) {
   // Header with proper spacing
   if (restaurant?.logo) {
     try {
-      const logoHeight = 35; // Reduced logo size
-      const logoWidth = 50; // Reduced logo width
+      const logoHeight = 35;
+      const logoWidth = 50;
       doc.addImage(
         restaurant.logo,
         "PNG",
@@ -64,7 +64,7 @@ export function generateBillPDF(billData, restaurant) {
         logoWidth,
         logoHeight
       );
-      yPos += logoHeight + 12; // Add spacing after logo
+      yPos += logoHeight + 12;
     } catch (e) {
       console.error("Error adding logo:", e);
     }
@@ -90,7 +90,8 @@ export function generateBillPDF(billData, restaurant) {
       yPos,
       CONTENT_WIDTH,
       8,
-      "center"
+      "center",
+      true
     );
     yPos += 6;
   }
@@ -108,92 +109,78 @@ export function generateBillPDF(billData, restaurant) {
     yPos += 10;
   }
 
-  addLine(yPos);
-  yPos += 12; // More space after line
-
-  // Bill Info
-  const currentDate = new Date();
-  const dateStr = currentDate.toLocaleDateString("en-IN", {
-    month: "2-digit",
-    day: "2-digit",
-    year: "numeric",
-  });
-  const timeStr = currentDate.toLocaleTimeString("en-IN", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  });
-
-  yPos += addText(
-    `Date: ${dateStr} ${timeStr}`,
-    MARGIN,
-    yPos,
-    CONTENT_WIDTH,
-    8
-  );
-  yPos += 8;
-
-  if (billData.billNumber) {
-    yPos += addText(
-      `Bill #: ${billData.billNumber}`,
-      MARGIN,
-      yPos,
-      CONTENT_WIDTH,
-      8
-    );
-    yPos += 8;
+  // Date and Time - Centered (as per image format)
+  if (billData.date || billData.time) {
+    const dateTimeStr = `${billData.date || ""} ${billData.time || ""}`.trim();
+    if (dateTimeStr) {
+      yPos += addText(
+        dateTimeStr,
+        BILL_WIDTH / 2,
+        yPos,
+        CONTENT_WIDTH,
+        8,
+        "center"
+      );
+      yPos += 10;
+    }
   }
 
-  if (billData.tableNumber) {
+  // Table Number, Bill Number, Waiter Name - All on same line, aligned with columns
+  // Calculate column positions first (same as items)
+  // Use equal spacing: Item column (left), Quantity column (center), Price column (right)
+  const itemColStart = MARGIN;
+  const availableWidth = BILL_WIDTH - MARGIN * 2; // Total available width
+  const columnWidth = availableWidth / 3; // Equal width for each column
+  const itemColWidth = columnWidth;
+  const qtyColStart = itemColStart + itemColWidth;
+  const rightMargin = BILL_WIDTH - MARGIN; // Right edge for alignment
+
+  doc.setFontSize(8);
+  doc.setFont(undefined, "bold");
+  doc.setFont;
+  // Table, Bill #, Waiter on same line - aligned with columns
+  if (billData.tableNumber || billData.billNumber || billData.waiterName) {
+    // Table number in first column (left, like Dish)
+    if (billData.tableNumber) {
+      doc.text(`Table ${billData.tableNumber}`, itemColStart, yPos);
+    }
+    // Bill number in second column (center, like Quantity)
+    if (billData.billNumber) {
+      doc.text(billData.billNumber, qtyColStart, yPos);
+    }
+    // Waiter name in third column (right-aligned, like Price)
+    if (billData.waiterName) {
+      doc.text(billData.waiterName, rightMargin, yPos, { align: "right" });
+    }
+    yPos += 12;
+  }
+
+  // Service Type - **** DINE IN **** or **** TAKE AWAY ****
+  if (billData.serviceType) {
     yPos += addText(
-      `Table: ${billData.tableNumber}`,
-      MARGIN,
-      yPos,
+      `**** ${billData.serviceType} ****`,
+      BILL_WIDTH / 2,
+      yPos + 2,
       CONTENT_WIDTH,
-      8
+      8,
+      "center",
+      true
     );
-    yPos += 12; // More space before items section
+    yPos += 12;
   }
 
   addLine(yPos);
-  yPos += 12; // More space after line before items header
+  yPos += 12;
 
-  // Items Header - with proper column widths that fit
+  // Items Header - Dish, Quantity, Price (as per image)
   doc.setFontSize(8);
   doc.setFont(undefined, "bold");
 
-  // Column positions - all within CONTENT_WIDTH, leaving space for amounts
-  const itemColStart = MARGIN;
-  const itemColWidth = 60; // Further reduced item name column
-  const qtyColStart = itemColStart + itemColWidth;
-  const qtyColWidth = 15; // Reduced quantity column
-  const rateColStart = qtyColStart + qtyColWidth;
-  const rateColWidth = 25; // Rate column width
-  // Ensure amount has at least 50pt space from rate column
-  const minAmountSpace = 50;
-  const amountColStart = rateColStart + rateColWidth;
-
-  // Check if we have enough space, if not reduce item width
-  let actualItemWidth = itemColWidth;
-  let actualQtyStart = qtyColStart;
-  let actualRateStart = rateColStart;
-
-  if (amountColStart + minAmountSpace > BILL_WIDTH - MARGIN) {
-    // Reduce item width to make room
-    actualItemWidth =
-      BILL_WIDTH - MARGIN - qtyColWidth - rateColWidth - minAmountSpace - 5;
-    actualQtyStart = MARGIN + actualItemWidth;
-    actualRateStart = actualQtyStart + qtyColWidth;
-  }
-
-  doc.text("Item", MARGIN, yPos);
-  doc.text("Qty", actualQtyStart, yPos);
-  doc.text("Rate", actualRateStart, yPos);
-  // Amount header right-aligned within available space
-  doc.text("Amount", BILL_WIDTH - MARGIN, yPos, { align: "right" });
-  yPos += 12; // Space after header
-  addLine(yPos);
-  yPos += 10; // Space before first item
+  doc.text("Dish", itemColStart, yPos);
+  doc.text("Quantity", qtyColStart, yPos);
+  // Price header right-aligned at right margin
+  doc.text("Price", rightMargin, yPos, { align: "right" });
+  yPos += 12;
 
   // Items
   doc.setFont(undefined, "normal");
@@ -202,27 +189,23 @@ export function generateBillPDF(billData, restaurant) {
     const itemName = item.dishName || item.name || "Unknown Item";
     const qty = String(item.quantity || 0);
     const price = parseFloat(item.price || 0);
-    const amount = price * (item.quantity || 0);
 
     // Item name - truncate if too long, ensure it fits
-    const nameLines = doc.splitTextToSize(itemName, actualItemWidth - 3);
+    const nameLines = doc.splitTextToSize(itemName, itemColWidth - 3);
     const firstLine = nameLines[0];
-    doc.text(firstLine, MARGIN, yPos);
+    doc.text(firstLine, itemColStart, yPos);
 
-    // Qty and Rate - use calculated positions to avoid overlap
-    doc.text(qty, actualQtyStart, yPos);
-    doc.text(`Rs.${price.toFixed(2)}`, actualRateStart, yPos);
-
-    // Amount - right-aligned, ensuring it doesn't exceed right margin
-    const amountText = `Rs.${amount.toFixed(2)}`;
-    // Use right margin as the x position for right alignment
-    doc.text(amountText, BILL_WIDTH - MARGIN, yPos, { align: "right" });
+    // Quantity in center column
+    doc.text(qty, qtyColStart, yPos);
+    // Price right-aligned at right margin (like Price header)
+    const priceText = `Rs.${price.toFixed(2)}`;
+    doc.text(priceText, rightMargin, yPos, { align: "right" });
 
     // If name wraps, add additional lines below
     if (nameLines.length > 1) {
       yPos += 10;
       nameLines.slice(1).forEach((line) => {
-        doc.text(line, MARGIN, yPos);
+        doc.text(line, itemColStart, yPos);
         yPos += 10;
       });
     } else {
@@ -231,50 +214,53 @@ export function generateBillPDF(billData, restaurant) {
 
     // Add spacing between items (except after last item)
     if (index < billData.items.length - 1) {
-      yPos += 3; // Extra spacing between items
+      yPos += 3;
     }
   });
 
-  yPos += 8; // Space before totals line
+  yPos += 8;
   addLine(yPos);
-  yPos += 12; // Space after line before totals
+  yPos += 12;
 
-  // Totals - ensure they fit within margins
+  // Totals - Match image format: Amount, SGST, CGST, Total Amount
   doc.setFontSize(8);
   const subtotal = billData.subtotal || 0;
   const cgst = billData.cgst || 0;
   const sgst = billData.sgst || 0;
   const total = billData.total || 0;
 
-  // All totals right-aligned to the right margin
-  doc.text(`Subtotal:`, MARGIN, yPos);
+  // Amount (Subtotal)
+  doc.text(`Amount:`, MARGIN, yPos);
   doc.text(`Rs.${subtotal.toFixed(2)}`, BILL_WIDTH - MARGIN, yPos, {
     align: "right",
   });
   yPos += 10;
 
-  doc.text(`CGST (${restaurant?.cgstRate || 2.5}%):`, MARGIN, yPos);
-  doc.text(`Rs.${cgst.toFixed(2)}`, BILL_WIDTH - MARGIN, yPos, {
+  // SGST
+  doc.text(`SGST (${restaurant?.sgstRate || 2.5}%):`, MARGIN, yPos);
+  doc.text(`Rs.${sgst.toFixed(2)}`, BILL_WIDTH - MARGIN, yPos, {
     align: "right",
   });
   yPos += 10;
 
-  doc.text(`SGST (${restaurant?.sgstRate || 2.5}%):`, MARGIN, yPos);
-  doc.text(`Rs.${sgst.toFixed(2)}`, BILL_WIDTH - MARGIN, yPos, {
+  // CGST
+  doc.text(`CGST (${restaurant?.cgstRate || 2.5}%):`, MARGIN, yPos);
+  doc.text(`Rs.${cgst.toFixed(2)}`, BILL_WIDTH - MARGIN, yPos, {
     align: "right",
   });
   yPos += 12;
 
   addLine(yPos);
-  yPos += 12; // Space after line before total
+  yPos += 12;
 
+  // Total Amount
   doc.setFont(undefined, "bold");
   doc.setFontSize(10);
-  doc.text(`Total:`, MARGIN, yPos);
+  doc.text(`Total Amount:`, MARGIN, yPos);
   doc.text(`Rs.${total.toFixed(2)}`, BILL_WIDTH - MARGIN, yPos, {
     align: "right",
   });
-  yPos += 15; // Space after total
+  yPos += 15;
 
   // GST Number
   if (restaurant?.gstNumber) {
@@ -287,7 +273,24 @@ export function generateBillPDF(billData, restaurant) {
       yPos,
       CONTENT_WIDTH,
       7,
-      "center"
+      "center",
+      true
+    );
+    yPos += 8;
+  }
+
+  // SAC CODE
+  if (restaurant?.sacCode) {
+    doc.setFont(undefined, "normal");
+    doc.setFontSize(7);
+    yPos += addText(
+      `SAC CODE: ${restaurant.sacCode}`,
+      BILL_WIDTH / 2,
+      yPos,
+      CONTENT_WIDTH,
+      7,
+      "center",
+      true
     );
     yPos += 10;
   }
@@ -302,12 +305,13 @@ export function generateBillPDF(billData, restaurant) {
       yPos,
       CONTENT_WIDTH,
       8,
-      "center"
+      "center",
+      true
     );
   }
 
   // Set final page height dynamically
-  const finalHeight = yPos + 20;
+  const finalHeight = yPos + 8;
   if (finalHeight > doc.internal.pageSize.getHeight()) {
     doc.internal.pageSize.setHeight(finalHeight);
   }

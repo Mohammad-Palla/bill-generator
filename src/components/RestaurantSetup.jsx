@@ -10,6 +10,7 @@ export default function RestaurantSetup() {
     address: '',
     phone: '',
     gstNumber: '',
+    sacCode: '',
     cgstRate: 2.5,
     sgstRate: 2.5,
     billFooter: '',
@@ -25,6 +26,7 @@ export default function RestaurantSetup() {
         address: restaurant.address || '',
         phone: restaurant.phone || '',
         gstNumber: restaurant.gstNumber || '',
+        sacCode: restaurant.sacCode || '',
         cgstRate: restaurant.cgstRate || 2.5,
         sgstRate: restaurant.sgstRate || 2.5,
         billFooter: restaurant.billFooter || '',
@@ -135,6 +137,17 @@ export default function RestaurantSetup() {
             value={formData.gstNumber}
             onChange={handleInputChange}
             placeholder="Enter GST number"
+          />
+        </div>
+
+        <div className="form-group">
+          <label>SAC CODE</label>
+          <input
+            type="text"
+            name="sacCode"
+            value={formData.sacCode}
+            onChange={handleInputChange}
+            placeholder="Enter SAC CODE"
           />
         </div>
 

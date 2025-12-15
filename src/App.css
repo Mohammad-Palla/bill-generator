@@ -378,6 +378,14 @@
   font-size: 1rem;
 }
 
+.bill-controls-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
 .dishes-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -592,13 +600,25 @@
   margin: 0.25rem 0;
 }
 
+.bill-info-row.centered {
+  justify-content: center;
+  text-align: center;
+}
+
+.bill-info-row.aligned {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
 .bill-items {
   margin-bottom: 1rem;
 }
 
 .bill-items-header {
   display: grid;
-  grid-template-columns: 2fr 0.5fr 1fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr;
   gap: 0.5rem;
   font-weight: 600;
   padding-bottom: 0.5rem;
@@ -609,7 +629,7 @@
 
 .bill-item {
   display: grid;
-  grid-template-columns: 2fr 0.5fr 1fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr;
   gap: 0.5rem;
   padding: 0.5rem 0;
   border-bottom: 1px dotted #dee2e6;
@@ -682,7 +702,7 @@
   .bill-creator-container {
     grid-template-columns: 1fr 1fr;
   }
-  
+
   .bill-preview-panel {
     grid-column: 1 / -1;
     max-height: 500px;
